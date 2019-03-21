@@ -1,3 +1,11 @@
+/**
+ * This class implements data and functionality required for AVSDF layout per
+ * node.
+ *
+ *
+ * Copyright: i-Vis Research Group, Bilkent University, 2007 - present
+ */
+
 let LNode = require('layout-base').LNode;
 let Quicksort = require('layout-base').Quicksort;
 
@@ -20,7 +28,6 @@ function AVSDFNode(gm, vNode, loc, size)
 
 	// Angle of this node on the owner circle in radians
     this.angle = 0;
-
 
     // Index of this node on the owner circle
     this.circleIndex = -1;
@@ -59,7 +66,6 @@ AVSDFNode.prototype.setIndex = function(index)
     this.isCrossingNumberValid = false;
 };
 
-
 // This function returns the index of this node in the ordering of its owner
 // circle. Here -1 means that the vertex is not yet placed on its owner
 //circle.
@@ -78,12 +84,10 @@ AVSDFNode.prototype.getNeighborsSortedByDegree = function()
     self.getNeighborsList().addAllTo(neighborsList);
     let result = neighborsList.filter( node => ( node.getIndex() === -1 ) );
 
-    //sort the neighbors
-    let comparisonFunction = function(a,b)
-    {
-        return b.getDegree() > a.getDegree();
-    };
-    Quicksort.quicksort(result, comparisonFunction); // TODO check for bugs
+    result.sort(function(a,b){
+        return a.getDegree() - b.getDegree();
+    });
+
     return result;
 };
 
@@ -171,6 +175,7 @@ AVSDFNode.prototype.getTotalCrossingOfEdges = function()
     {
         self.calculateTotalCrossing();
         self.isCrossingNumberValid = true;
+
     }
 
     return self.totalCrossingOfEdges;
@@ -183,13 +188,12 @@ AVSDFNode.prototype.getTotalCrossingOfEdges = function()
 
 // This function calculates the total number of crossings the edges of this
 // node cause.
-// TODO: check for possible error
 AVSDFNode.prototype.calculateTotalCrossing = function()
 {
     let self = this;
     let temp_crossing_count = 0;
     let temp_edge_list = [];
-    temp_edge_list.push.apply(self.getCircle().getEdges());
+    temp_edge_list.push.apply(temp_edge_list, self.getCircle().getEdges());
     temp_edge_list = temp_edge_list.filter( (ele) => self.getEdges().indexOf(ele) < 0);
 
     self.getEdges().forEach(

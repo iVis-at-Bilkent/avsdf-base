@@ -1,7 +1,13 @@
-let Layout = require('layout-base').Layout;
-let Quicksort = require('layout-base').Quicksort;
-const AVSDFConstants = require('./AVSDFConstants.js');
+/**
+ * This class implements the overall layout process for the AVSDF algorithm
+ * (Circular Drawing Algorithm by He and Sykora).
+ *
+ *
+ * Copyright: i-Vis Research Group, Bilkent University, 2007 - present
+ */
 
+let Layout = require('layout-base').Layout;
+let AVSDFConstants = require('./AVSDFConstants.js');
 let AVSDFCircle = require('./AVSDFCircle.js');
 let AVSDFNode = require('./AVSDFNode.js');
 let AVSDFEdge = require('./AVSDFEdge.js');
@@ -26,7 +32,9 @@ for (let property in Layout)
 
 AVSDFLayout.prototype.newGraph = function (vObject)
 {
-    return new AVSDFCircle(null, this.graphManager, vObject);
+    this.avsdfCircle = new AVSDFCircle(null, this.graphManager, vObject);
+
+    return this.avsdfCircle;
 };
 
 AVSDFLayout.prototype.newNode = function (vNode)
@@ -39,27 +47,9 @@ AVSDFLayout.prototype.newEdge = function (vEdge)
     return new AVSDFEdge(null, null, vEdge);
 };
 
-AVSDFLayout.prototype.initParameters = function()
-{
-    Layout.prototype.initParameters.call(this, arguments);
-
-    if (!this.isSubLayout)
-    {
-        this.defaultNodeSeparation = AVSDFConstants.DEFAULT_NODE_SEPARATION;
-        // TODO change this default option with user generated option
-        this.nodeSeparation = this.defaultNodeSeparation;
-    }
-};
-
 // -----------------------------------------------------------------------------
 // Section: Accessor Functions
 // -----------------------------------------------------------------------------
-
-// This function returns the node separation value
-AVSDFLayout.prototype.getNodeSeparation = function()
-{
-    return this.nodeSeparation;
-};
 
 // This function returns the position data for all nodes
 AVSDFLayout.prototype.getPositionsData = function()
@@ -84,18 +74,17 @@ AVSDFLayout.prototype.getPositionsData = function()
     return pData;
 };
 
-// This function sets the node separation value
-AVSDFLayout.prototype.setNodeSeparation = function (nodeSeparation)
-{
-    this.nodeSeparation = nodeSeparation;
-};
-
 // -----------------------------------------------------------------------------
 // Section: Layout Related
 // -----------------------------------------------------------------------------
 
-// This function performs layout on constructed l-level graph.
-// It returns true on success, false otherwise
+/**
+ * This function performs layout on constructed l-level graph.
+ * It returns true on success, false otherwise.
+ * Important!: If you want to see the results of this function then, after this function is called, you have to calculate
+ * and set the positions of every node. To do this call updateNodeCoordinates. However, updateNodeAngles on the other
+ * hand is not needed (redundant) for this function.
+ */
 AVSDFLayout.prototype.layout = function ()
 {
     let self = this;
@@ -106,9 +95,9 @@ AVSDFLayout.prototype.layout = function ()
         return false;
     }
 
-    let clusterGraph = self.graphManager.getRoot();
+    let clusterGraph = this.avsdfCircle; // Fixed reference, but now it is a bit redundant
 
-    clusterGraph.setNodeSeparation(self.nodeSeparation);
+    clusterGraph.setNodeSeparation(this.nodeSeparation);
     clusterGraph.calculateRadius();
     clusterGraph.initOrdering();
 
@@ -118,78 +107,92 @@ AVSDFLayout.prototype.layout = function ()
         clusterGraph.putInOrder(node);
     }
 
-    self.postProcess(clusterGraph);
-    clusterGraph.correctAngles();
-
-    clusterGraph.getNodes().forEach(
-        (node) => node.setCenter(clusterGraph.getCenterX() + clusterGraph.getRadius() * Math.cos(node.getAngle()), clusterGraph.getCenterY() +
-                                 clusterGraph.getRadius() * Math.sin(node.getAngle()))
-    );
-
     return true;
 };
 
-// This method performs layout on constructed l-level graph. It returns true
-// on success, false otherwise.
-AVSDFLayout.prototype.postProcess = function (circle)
+// This function updates the angle (in radians) property of AVSDFNode elements in the circle
+AVSDFLayout.prototype.updateNodeAngles = function (){
+    this.graphManager.getRoot().correctAngles(); //AVSDFCircle object
+};
+
+// This function traverses the vertices of the graph and sets their correct coordinates with respect to the owner circle.
+AVSDFLayout.prototype.updateNodeCoordinates = function (){
+    let clusterGraph = this.graphManager.getRoot();
+
+    clusterGraph.getNodes().forEach(function(node) {
+        node.setCenter(clusterGraph.getCenterX() + clusterGraph.getRadius() * Math.cos(node.getAngle()), clusterGraph.getCenterY() +
+            clusterGraph.getRadius() * Math.sin(node.getAngle()));
+    });
+};
+
+// -----------------------------------------------------------------------------
+// Section: Post Processing
+// -----------------------------------------------------------------------------
+
+/**
+ * This method implements the post processing step of the algorithm, which
+ * tries to minimize the number of edges further with respect to the local
+ * adjusting algorithm described by He and Sykora.
+ */
+AVSDFLayout.prototype.initPostProcess = function ()
 {
-    circle.calculateEdgeCrossingsOfNodes();
+    this.avsdfCircle.calculateEdgeCrossingsOfNodes();
 
-    let list = circle.getNodes();
+    let list = this.avsdfCircle.getNodes();
 
-    let comparisonFunction = function(a,b)
+    list.sort(function(a,b){
+        return b.getTotalCrossingOfEdges() - a.getTotalCrossingOfEdges();
+    });
+
+    return list;
+};
+
+AVSDFLayout.prototype.oneStepPostProcess = function (node)
+{
+    let self = this;
+
+    let currentCrossingNumber = node.getTotalCrossingOfEdges();
+    let newCrossingNumber;
+
+    let neighbours = [];
+    node.getNeighborsList().addAllTo(neighbours);
+
+    for (let j = 0; j < neighbours.length; j++)
     {
-        return b.getTotalCrossingOfEdges() > a.getTotalCrossingOfEdges();
-    };
+        let neighbour = neighbours[j];
 
-    Quicksort.quicksort(list, comparisonFunction); // TODO check for bugs
+        let oldIndex = node.getIndex();
+        let newIndex = (neighbour.getIndex() + 1) % self.avsdfCircle.getSize();
 
-
-
-    for (let i = list.length -1; i >= 0; i--)
-    {
-        let node = list[i];
-        let currentCrossingNumber = node.getTotalCrossingOfEdges();
-        let newCrossingNumber;
-        let neighbors = node.getNeighborsList();
-
-        for (let j = 0; j < neighbors.length; j++)
+        if (oldIndex !== newIndex)
         {
-            let neighbor = neighbors[j];
+            node.setIndex(newIndex);
 
-            let newIndex = (neighbor.getIndex() + 1) % circle.getSize();
-            let oldIndex = node.getIndex();
-
-            if (oldIndex !== newIndex)
+            if (oldIndex < node.getIndex())
             {
-                node.setIndex(newIndex);
+                oldIndex += self.avsdfCircle.getSize();
+            }
 
-                if (oldIndex < node.getIndex())
-                {
-                    oldIndex += circle.getSize();
-                }
+            let index = node.getIndex();
 
-                let index = node.getIndex();
+            while (index < oldIndex)
+            {
+                let temp = self.avsdfCircle.getOrder()[index % self.avsdfCircle.getSize()];
+                temp.setIndex((temp.getIndex() + 1) % self.avsdfCircle.getSize());
+                index += 1;
+            }
 
-                while (index < oldIndex)
-                {
-                    let temp = circle.getOrder()[index % circle.getSize()];
-                    temp.setIndex((temp.getIndex() + 1) % circle.getSize());
-                    index += 1;
-                }
+            node.calculateTotalCrossing();
+            newCrossingNumber = node.getTotalCrossingOfEdges();
 
-                node.calculateTotalCrossing();
-                newCrossingNumber = node.getTotalCrossingOfEdges();
-
-                if (newCrossingNumber >= currentCrossingNumber)
-                {
-                    circle.loadOldIndicesOfNodes();
-                }
-                else
-                {
-                    circle.reOrderVertices();
-                    currentCrossingNumber = newCrossingNumber;
-                }
+            if (newCrossingNumber >= currentCrossingNumber)
+            {
+                self.avsdfCircle.loadOldIndicesOfNodes();
+            }
+            else
+            {
+                self.avsdfCircle.reOrderVertices();
+                currentCrossingNumber = newCrossingNumber;
             }
         }
     }

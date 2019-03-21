@@ -1,3 +1,11 @@
+/**
+ * This class implements data and functionality required for AVSDF layout per
+ * edge.
+ *
+
+ * Copyright: i-Vis Research Group, Bilkent University, 2007 - present
+ */
+
 let LEdge = require('layout-base').LEdge;
 
 // -----------------------------------------------------------------------------

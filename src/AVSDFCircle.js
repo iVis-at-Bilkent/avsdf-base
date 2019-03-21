@@ -1,3 +1,11 @@
+/**
+ * This class implements data and functionality required for AVSDF layout per
+ * circle.
+ *
+ *
+ * Copyright: i-Vis Research Group, Bilkent University, 2007 - present
+ */
+
 let LGraph = require('layout-base').LGraph;
 
 // -----------------------------------------------------------------------------
@@ -269,13 +277,13 @@ AVSDFCircle.prototype.loadOldIndicesOfNodes = function()
 // decrease in the number of crossings with the new indices.
 AVSDFCircle.prototype.reOrderVertices = function()
 {
+    var self = this;
     this.getNodes().forEach( (node) => self.inOrder[node.getIndex()] = node );
 };
 
 
 // This function finds and returns the unordered smallest degree vertex on
 // this circle.
-// TODO : should this function be private?
 AVSDFCircle.prototype.findUnorderedSmallestDegreeNode = function()
 {
     let minDegree = Number.MAX_SAFE_INTEGER;
