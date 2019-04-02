@@ -6,7 +6,7 @@
  
  ## Dependencies
  
- * [iVis-at-Bilkent/layout-base](https://github.com/iVis-at-Bilkent/layout-base/tree/unstable)
+ * [iVis-at-Bilkent/layout-base](https://github.com/iVis-at-Bilkent/layout-base)
  
  Elements of layout-base can be accessed through this library as well. See below for an example.
  
@@ -18,7 +18,7 @@
  
  CommonJS require:
  
-```
+```js
 const AVSDFLayout = require('avsdf-base').AVSDFLayout;
 const AVSDFNode = require('avsdf-base').AVSDFNode;
 const AVSDFConstants = require('avsdf-base').AVSDFConstants;
@@ -30,7 +30,7 @@ const DimensionD = require('avsdf-base').layoutBase.DimensionD;
 
 The main layout and a Graph Manager (see layout-base for details) connected to this layout is needed with 
 
-```
+```js
 let avsdfLayout = new AVSDFLayout();
 let graphManager = avsdfLayout.newGraphManager();
 let root = graphManager.addRoot();
@@ -38,7 +38,7 @@ let root = graphManager.addRoot();
 Filling in the Graph Manager with nodes and edges are more related to layout-base library than this library. So details have to be found there. But remember to add AVSDF elements as
  opposed to layout-base elements. Also remember that the root of the Graph Manager should be an AVSDFCircle object. 
  
-```
+```js
 // Adding a node 
 Let node = root.add(new AVSDFNode(graphManager));
 
@@ -48,7 +48,7 @@ Let edge = graphManager.add(avsdfLayout.newEdge(), sourceNode, targetNode);
 
 After all nodes and edges are added. The algorithm can be run as shown below. 
 
-```
+```js
 // Running the AVSDF layout.
 avsdfLayout.layout();
 
