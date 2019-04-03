@@ -80,9 +80,8 @@ AVSDFNode.prototype.getNeighborsSortedByDegree = function()
 {
     let  self = this;
 
-    let neighborsList = [];
-    self.getNeighborsList().addAllTo(neighborsList);
-    let result = neighborsList.filter( node => ( node.getIndex() === -1 ) );
+    let result = Array.from(self.getNeighborsList());
+    result = result.filter( node => ( node.getIndex() === -1 ) );
 
     result.sort(function(a,b){
         return a.getDegree() - b.getDegree();

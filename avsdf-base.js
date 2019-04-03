@@ -635,8 +635,7 @@ AVSDFLayout.prototype.oneStepPostProcess = function (node) {
     let currentCrossingNumber = node.getTotalCrossingOfEdges();
     let newCrossingNumber;
 
-    let neighbours = [];
-    node.getNeighborsList().addAllTo(neighbours);
+    let neighbours = Array.from(node.getNeighborsList());
 
     for (let j = 0; j < neighbours.length; j++) {
         let neighbour = neighbours[j];
@@ -751,9 +750,8 @@ AVSDFNode.prototype.getIndex = function () {
 AVSDFNode.prototype.getNeighborsSortedByDegree = function () {
     let self = this;
 
-    let neighborsList = [];
-    self.getNeighborsList().addAllTo(neighborsList);
-    let result = neighborsList.filter(node => node.getIndex() === -1);
+    let result = Array.from(self.getNeighborsList());
+    result = result.filter(node => node.getIndex() === -1);
 
     result.sort(function (a, b) {
         return a.getDegree() - b.getDegree();

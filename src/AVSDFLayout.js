@@ -154,8 +154,7 @@ AVSDFLayout.prototype.oneStepPostProcess = function (node)
     let currentCrossingNumber = node.getTotalCrossingOfEdges();
     let newCrossingNumber;
 
-    let neighbours = [];
-    node.getNeighborsList().addAllTo(neighbours);
+    let neighbours = Array.from(node.getNeighborsList());
 
     for (let j = 0; j < neighbours.length; j++)
     {
