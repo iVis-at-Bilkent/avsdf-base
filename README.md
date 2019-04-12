@@ -1,4 +1,5 @@
-# avsdf-base  
+avsdf-base
+================================================================================
 
 ## Description
 
@@ -6,17 +7,15 @@
  
  ## Dependencies
  
- * [iVis-at-Bilkent/layout-base](https://github.com/iVis-at-Bilkent/layout-base)
+ * layout-base ^1.0.0
  
  Elements of layout-base can be accessed through this library as well. See below for an example.
  
  ## Usage
   
- Download the library:
+ Add `avsdf-base` as a dependecy to your layout extension.
  
- //TO-DO
- 
- CommonJS require:
+ `require()` in the extension to reach functionality:
  
 ```js
 const AVSDFLayout = require('avsdf-base').AVSDFLayout;
